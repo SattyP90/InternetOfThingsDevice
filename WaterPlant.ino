@@ -19,14 +19,22 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 DHT dht(DHTPIN, DHTTYPE);
 
 //wifi
-#define SSID "VMup"
-
 char password[64];
 
-//read password from serial monitor
+// ===== SMA SETTINGS =====
+const int numReadings = 10;
+
+int readings[numReadings];
+int readIndex = 0;
+
+long total = 0;
+int averageMoisture = 0;
+// ========================
+
+
+//wifi and password
 void readPassword() {
 
-  // Show message on OLED
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -51,10 +59,10 @@ void readPassword() {
 
   strcpy(password, line.c_str());
 
-  Serial.println("\nPassword received...");
+  Serial.println("Password received...");
 }
 
-//connecting wifi 
+//wifi set up
 void connectWiFi() {
 
   WiFi.mode(WIFI_STA);
@@ -74,7 +82,6 @@ void connectWiFi() {
   Serial.println(WiFi.localIP());
 }
 
-//set up
 void setup() {
 
   Serial.begin(115200);
@@ -84,6 +91,11 @@ void setup() {
 
   dht.begin();
 
+  //initialize SMA array
+  for (int i = 0; i < numReadings; i++) {
+    readings[i] = 0;
+  }
+
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println("OLED failed");
     while (true);
@@ -92,11 +104,13 @@ void setup() {
   display.clearDisplay();
   display.display();
 
+  //wifi first
   connectWiFi();
 
+  //Cloud
   initProperties();
-  // Connect to Arduino IoT Cloud
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
+
   setDebugMessageLevel(2);
   ArduinoCloud.printDebugInfo();
 }
@@ -104,17 +118,55 @@ void setup() {
 //loop
 void loop() {
 
-  int soilValue = analogRead(SOIL_PIN);
-  float humidity = dht.readHumidity();
-  float temperature = dht.readTemperature();
+  ArduinoCloud.update();
 
+  // ===== SOIL MOISTURE SMA =====
+
+  //raw sensor reading
+  int rawMoisture = analogRead(SOIL_PIN);
+
+  //remove oldest reading
+  total = total - readings[readIndex];
+
+  //store new reading
+  readings[readIndex] = rawMoisture;
+
+  //add new reading
+  total = total + readings[readIndex];
+
+  //move to next array position
+  readIndex++;
+
+  if (readIndex >= numReadings) {
+    readIndex = 0;
+  }
+
+  //calculate average
+  averageMoisture = total / numReadings;
+
+  //use smoothed value
+  soilMoisture = averageMoisture;
+
+  // ==============================
+
+  humidity = dht.readHumidity();
+  temperature = dht.readTemperature();
+
+  //serial plotter output
+  Serial.print("Raw:");
+  Serial.print(rawMoisture);
+
+  Serial.print(",SMA:");
+  Serial.println(soilMoisture);
+
+  //display
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
 
   display.setCursor(0, 0);
   display.print("Soil: ");
-  display.print(soilValue);
+  display.print(soilMoisture);
 
   display.setCursor(0, 20);
   display.print("Temp: ");
@@ -127,6 +179,7 @@ void loop() {
   display.print(" %");
 
   display.setCursor(0, 55);
+
   if (WiFi.status() == WL_CONNECTED) {
     display.print("WiFi: OK");
   } else {
@@ -134,6 +187,26 @@ void loop() {
   }
 
   display.display();
-  ArduinoCloud.update();//update the cloud
+
   delay(2000);
+}
+
+void onOledMessageChange() {
+
+  Serial.println("OLED message updated from cloud:");
+
+  Serial.println(oledMessage);
+
+  // Show on OLED
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setTextColor(WHITE);
+
+  display.setCursor(0, 20);
+
+  display.print(oledMessage);
+
+  display.display();
 }
