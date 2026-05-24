@@ -69,7 +69,7 @@ void connectWiFi() {
 
   readPassword();
 
-  WiFi.begin(SSID, password);
+  WiFi.begin("VMup", password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -93,7 +93,7 @@ void sendToSupabase(int soil, float temp, float hum) {
   http.addHeader("Authorization", "Bearer sb_publishable_CdM_yyxbH40KqegkB1P29w_D1dzjJQn");
   http.addHeader("Content-Type", "application/json");
 
-  String json = "{";
+  String json = "{"; // put data into a json format
   json += "\"soil_moisture\":" + String(soil) + ",";
   json += "\"temperature\":" + String(temp) + ",";
   json += "\"humidity\":" + String(hum);
@@ -132,18 +132,10 @@ void setup() {
   //wifi first
   connectWiFi();
 
-  //cloud
-  initProperties();
-  ArduinoCloud.begin(ArduinoIoTPreferredConnection);
-
-  setDebugMessageLevel(2);
-  ArduinoCloud.printDebugInfo();
 }
 
 //loop
 void loop() {
-
-  ArduinoCloud.update();
 
   //soil moisture sma -----
   //raw sensor reading
@@ -207,25 +199,17 @@ void loop() {
 
   display.display();
 
-  delay(60000);
+  delay(30000); // 1 minute delay 
 }
 
 void onOledMessageChange() {
-
   Serial.println("OLED message updated from cloud:");
-
   Serial.println(oledMessage);
-
   // Show on OLED
   display.clearDisplay();
-
   display.setTextSize(1);
-
   display.setTextColor(WHITE);
-
   display.setCursor(0, 20);
-
   display.print(oledMessage);
-
   display.display();
 }
