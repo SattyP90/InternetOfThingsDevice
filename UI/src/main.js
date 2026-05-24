@@ -1,32 +1,120 @@
 import './style.css'
+import { isSupabaseConfigured } from './Data/config.js'
+import { fetchLatestMeasurement } from './Data/measurements.js'
+import { formatTimestamp } from './Data/time.js'
+import { getWateringDecision } from './Data/watering.js'
 
 const app = document.querySelector('#app')
 
 app.innerHTML = `
   <main class="container">
-    <h1>Plant Monitoring UI</h1>
-    <p>Frontend is running. Next step is wiring this up to your device/API.</p>
+    <header class="header">
+      <h1>Plant Monitoring UI</h1>
+      <h2>Select a plant profile</h2>
+      <select id="plant-profile-select" aria-label="Select plant profile">
+        <option value="cactus">Cactus</option>
+        <option value="fern">Fern</option>
+        <option value="succulent" selected>Succulent</option>
+      </select>
 
-    <section class="card">
-      <h2>Status</h2>
-      <dl class="grid">
-        <div>
-          <dt>Device</dt>
-          <dd>—</dd>
+    </header>
+
+    <section class="card advisory" aria-label="Watering recommendation">
+      <h2 class="widget-title">Watering</h2>
+      <div id="watering-status" class="advisory-status">—</div>
+      <div id="watering-reason" class="widget-meta"></div>
+    </section>
+
+    <h2 class="section-title">Current measurements (with time stamps)</h2>
+
+    <section class="widgets" aria-label="Measurements">
+      <article class="card widget" aria-label="Temperature">
+        <h2 class="widget-title">Temperature</h2>
+        <div class="widget-value">
+          <span id="temperature-value" class="number">—</span>
+          <span class="unit">°C</span>
         </div>
-        <div>
-          <dt>Soil moisture</dt>
-          <dd>—</dd>
+        <div id="temperature-meta" class="widget-meta">Last updated: —</div>
+      </article>
+
+      <article class="card widget" aria-label="Humidity">
+        <h2 class="widget-title">Humidity</h2>
+        <div class="widget-value">
+          <span id="humidity-value" class="number">—</span>
+          <span class="unit">%</span>
         </div>
-        <div>
-          <dt>Pump</dt>
-          <dd>—</dd>
+        <div id="humidity-meta" class="widget-meta">Last updated: —</div>
+      </article>
+
+      <article class="card widget" aria-label="Soil moisture">
+        <h2 class="widget-title">Soil Moisture</h2>
+        <div class="widget-value">
+          <span id="soil-moisture-value" class="number">—</span>
+          <span class="unit">%</span>
         </div>
-        <div>
-          <dt>Last update</dt>
-          <dd>—</dd>
-        </div>
-      </dl>
+        <div id="soil-moisture-meta" class="widget-meta">Last updated: —</div>
+      </article>
     </section>
   </main>
 `
+
+const plantProfileSelect = document.querySelector('#plant-profile-select')
+const temperatureValueEl = document.querySelector('#temperature-value')
+const humidityValueEl = document.querySelector('#humidity-value')
+const soilMoistureValueEl = document.querySelector('#soil-moisture-value')
+const temperatureMetaEl = document.querySelector('#temperature-meta')
+const humidityMetaEl = document.querySelector('#humidity-meta')
+const soilMoistureMetaEl = document.querySelector('#soil-moisture-meta')
+const wateringStatusEl = document.querySelector('#watering-status')
+const wateringReasonEl = document.querySelector('#watering-reason')
+
+let latestMeasurement = null
+
+function getSelectedProfile() {
+  return plantProfileSelect?.value || 'succulent'
+}
+
+function renderMeasurement(measurement) {
+  latestMeasurement = measurement
+
+  const { temperatureC, humidityPct, soilMoisturePct, timestamp } = measurement
+  const timeText = formatTimestamp(timestamp)
+
+  temperatureValueEl.textContent = temperatureC ?? '—'
+  humidityValueEl.textContent = humidityPct ?? '—'
+  soilMoistureValueEl.textContent = soilMoisturePct ?? '—'
+
+  temperatureMetaEl.textContent = `Last updated: ${timeText}`
+  humidityMetaEl.textContent = `Last updated: ${timeText}`
+  soilMoistureMetaEl.textContent = `Last updated: ${timeText}`
+
+  const watering = getWateringDecision({ soilMoisturePct, profile: getSelectedProfile() })
+  wateringStatusEl.textContent = watering?.statusText ?? '—'
+  wateringReasonEl.textContent = watering?.reason ?? ''
+}
+
+async function loadData() {
+  try {
+    const measurement = await fetchLatestMeasurement()
+    renderMeasurement(measurement)
+  } catch (err) {
+    wateringStatusEl.textContent = 'Error loading data'
+    wateringReasonEl.textContent = err?.message ? String(err.message) : 'Unknown error'
+  }
+}
+
+async function start() {
+  if (!isSupabaseConfigured()) {
+    wateringStatusEl.textContent = 'Supabase not configured'
+    wateringReasonEl.textContent = 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in UI/.env.'
+    return
+  }
+
+  await loadData()
+}
+
+plantProfileSelect?.addEventListener('change', () => {
+  loadData()
+})
+
+start()

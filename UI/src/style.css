@@ -10,20 +10,62 @@ body {
   color: #111827;
 }
 
+.header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
 .container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 20px 14px;
 }
 
 h1 {
   margin: 0 0 8px;
-  font-size: 28px;
+  font-size: 22px;
 }
 
-p {
+.subtitle {
   margin: 0 0 24px;
   color: #374151;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #374151;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+#plant-profile-select {
+  width: 100%;
+  max-width: 420px;
+  padding: 12px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  outline: none;
+}
+
+#plant-profile-select:focus {
+  border-color: #d1d5db;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .card {
@@ -33,27 +75,85 @@ p {
   padding: 16px;
 }
 
-.card h2 {
-  margin: 0 0 12px;
-  font-size: 18px;
+.advisory {
+  margin-bottom: 14px;
 }
 
-.grid {
-  margin: 0;
+.advisory-status {
+  margin-top: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.widgets {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
-dt {
-  font-size: 12px;
-  color: #6b7280;
+.widget-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
-dd {
-  margin: 2px 0 0;
+.widget-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.widget-value .number {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-value .unit {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.widget-meta {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 28px 16px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .header {
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .widgets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .widgets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
