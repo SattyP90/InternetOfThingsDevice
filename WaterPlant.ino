@@ -3,6 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <DHT.h>
+#include <HTTPClient.h>
 #include "thingProperties.h"
 
 //screen
@@ -21,15 +22,13 @@ DHT dht(DHTPIN, DHTTYPE);
 //wifi
 char password[64];
 
-// ===== SMA SETTINGS =====
+//sma settings
 const int numReadings = 10;
-
 int readings[numReadings];
 int readIndex = 0;
-
 long total = 0;
 int averageMoisture = 0;
-// ========================
+
 
 
 //wifi and password
@@ -82,6 +81,32 @@ void connectWiFi() {
   Serial.println(WiFi.localIP());
 }
 
+#include <HTTPClient.h>
+
+void sendToSupabase(int soil, float temp, float hum) {
+
+  HTTPClient http;
+
+  http.begin("https://jhhheqqydngfmoohocbk.supabase.co/rest/v1/plant_readings");
+
+  http.addHeader("apikey", "sb_publishable_CdM_yyxbH40KqegkB1P29w_D1dzjJQn");
+  http.addHeader("Authorization", "Bearer sb_publishable_CdM_yyxbH40KqegkB1P29w_D1dzjJQn");
+  http.addHeader("Content-Type", "application/json");
+
+  String json = "{";
+  json += "\"soil_moisture\":" + String(soil) + ",";
+  json += "\"temperature\":" + String(temp) + ",";
+  json += "\"humidity\":" + String(hum);
+  json += "}";
+
+  int code = http.POST(json);
+
+  Serial.print("Supabase response: ");
+  Serial.println(code);
+
+  http.end();
+}
+
 void setup() {
 
   Serial.begin(115200);
@@ -91,7 +116,7 @@ void setup() {
 
   dht.begin();
 
-  //initialize SMA array
+  //initialising SMA array
   for (int i = 0; i < numReadings; i++) {
     readings[i] = 0;
   }
@@ -107,7 +132,7 @@ void setup() {
   //wifi first
   connectWiFi();
 
-  //Cloud
+  //cloud
   initProperties();
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
 
@@ -120,37 +145,31 @@ void loop() {
 
   ArduinoCloud.update();
 
-  // ===== SOIL MOISTURE SMA =====
-
+  //soil moisture sma -----
   //raw sensor reading
   int rawMoisture = analogRead(SOIL_PIN);
-
   //remove oldest reading
   total = total - readings[readIndex];
-
   //store new reading
   readings[readIndex] = rawMoisture;
-
   //add new reading
   total = total + readings[readIndex];
-
   //move to next array position
   readIndex++;
-
   if (readIndex >= numReadings) {
     readIndex = 0;
   }
-
   //calculate average
   averageMoisture = total / numReadings;
-
   //use smoothed value
   soilMoisture = averageMoisture;
+  // end of sma calculation codes--------------
 
-  // ==============================
 
   humidity = dht.readHumidity();
   temperature = dht.readTemperature();
+
+  sendToSupabase(soilMoisture, temperature, humidity);
 
   //serial plotter output
   Serial.print("Raw:");
@@ -188,7 +207,7 @@ void loop() {
 
   display.display();
 
-  delay(2000);
+  delay(60000);
 }
 
 void onOledMessageChange() {
