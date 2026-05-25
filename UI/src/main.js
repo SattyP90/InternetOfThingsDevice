@@ -1,6 +1,6 @@
 import './style.css'
 import { isSupabaseConfigured } from './Data/config.js'
-import { fetchLatestMeasurement } from './Data/measurements.js'
+import { fetchLatestMeasurement, subscribeToMeasurementUpdates } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringDecision } from './Data/watering.js'
 
@@ -69,6 +69,7 @@ const wateringStatusEl = document.querySelector('#watering-status')
 const wateringReasonEl = document.querySelector('#watering-reason')
 
 let latestMeasurement = null
+let unsubscribe = null
 
 function getSelectedProfile() {
   return plantProfileSelect?.value || 'succulent'
@@ -110,11 +111,21 @@ async function start() {
     return
   }
 
-  await loadData()
+  unsubscribe = subscribeToMeasurementUpdates(
+    (measurement) => {
+      renderMeasurement(measurement)
+    },
+    (error) => {
+      wateringStatusEl.textContent = 'Error loading data'
+      wateringReasonEl.textContent = error?.message ? String(error.message) : 'Unknown error'
+    }
+  )
 }
 
 plantProfileSelect?.addEventListener('change', () => {
-  loadData()
+  if (latestMeasurement) {
+    renderMeasurement(latestMeasurement)
+  }
 })
 
 start()

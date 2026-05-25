@@ -49,3 +49,32 @@ export async function fetchLatestMeasurement() {
     timestamp
   }
 }
+
+export function subscribeToMeasurementUpdates(onUpdate, onError) {
+  const cfg = getSupabaseConfig()
+  let pollInterval = null
+
+  const loadAndNotify = async () => {
+    try {
+      const measurement = await fetchLatestMeasurement()
+      console.log('Fetched latest measurement:', measurement)
+      onUpdate(measurement)
+    } catch (err) {
+      console.error('Error fetching measurement:', err)
+      onError?.(err)
+    }
+  }
+
+  // Start polling - check database every 30 seconds
+  console.log('Starting to poll database every 30 seconds')
+  loadAndNotify() // Load initial data immediately
+  pollInterval = setInterval(loadAndNotify, 30000)
+
+  // Return unsubscribe function
+  return () => {
+    if (pollInterval) {
+      clearInterval(pollInterval)
+      console.log('Stopped polling database')
+    }
+  }
+}
