@@ -14,6 +14,20 @@ function toIsoStringOrNull(value) {
   return Number.isFinite(date.getTime()) ? date.toISOString() : null
 }
 
+export function getSoilDrynessCategory(soilMoistureValue) {
+  if (soilMoistureValue == null) return null
+  
+  if (soilMoistureValue > 2600) {
+    return { category: 'Very Dry', value: soilMoistureValue }
+  } else if (soilMoistureValue >= 2200) {
+    return { category: 'Dry', value: soilMoistureValue }
+  } else if (soilMoistureValue >= 1600) {
+    return { category: 'Perfect', value: soilMoistureValue }
+  } else {
+    return { category: 'Too Wet', value: soilMoistureValue }
+  }
+}
+
 export async function fetchLatestMeasurement() {
   const cfg = getSupabaseConfig()
   const supabase = getSupabaseClient()
@@ -65,12 +79,12 @@ export function subscribeToMeasurementUpdates(onUpdate, onError) {
     }
   }
 
-  // Start polling - check database every 30 seconds
+  //start - check database every 30 seconds
   console.log('Starting to poll database every 30 seconds')
   loadAndNotify() // Load initial data immediately
   pollInterval = setInterval(loadAndNotify, 30000)
 
-  // Return unsubscribe function
+  //return unsubscribe function
   return () => {
     if (pollInterval) {
       clearInterval(pollInterval)

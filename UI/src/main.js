@@ -1,6 +1,6 @@
 import './style.css'
 import { isSupabaseConfigured } from './Data/config.js'
-import { fetchLatestMeasurement, subscribeToMeasurementUpdates } from './Data/measurements.js'
+import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringDecision } from './Data/watering.js'
 
@@ -50,7 +50,6 @@ app.innerHTML = `
         <h2 class="widget-title">Soil Moisture</h2>
         <div class="widget-value">
           <span id="soil-moisture-value" class="number">—</span>
-          <span class="unit">%</span>
         </div>
         <div id="soil-moisture-meta" class="widget-meta">Last updated: —</div>
       </article>
@@ -80,10 +79,11 @@ function renderMeasurement(measurement) {
 
   const { temperatureC, humidityPct, soilMoisturePct, timestamp } = measurement
   const timeText = formatTimestamp(timestamp)
+  const soilDryness = getSoilDrynessCategory(soilMoisturePct)
 
   temperatureValueEl.textContent = temperatureC ?? '—'
   humidityValueEl.textContent = humidityPct ?? '—'
-  soilMoistureValueEl.textContent = soilMoisturePct ?? '—'
+  soilMoistureValueEl.textContent = soilDryness ? soilDryness.category : '—'
 
   temperatureMetaEl.textContent = `Last updated: ${timeText}`
   humidityMetaEl.textContent = `Last updated: ${timeText}`
