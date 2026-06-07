@@ -22,10 +22,10 @@ app.innerHTML = `
     <section class="card advisory" aria-label="Watering recommendation">
       <h2 class="widget-title">Watering</h2>
       <div id="watering-status" class="advisory-status">—</div>
-      <div id="watering-reason" class="widget-meta"></div>
+      
     </section>
 
-    <h2 class="section-title">Current measurements (with time stamps)</h2>
+    <h2 class="section-title">Current measurements</h2>
 
     <section class="widgets" aria-label="Measurements">
       <article class="card widget" aria-label="Temperature">
