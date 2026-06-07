@@ -28,6 +28,53 @@ export function getSoilDrynessCategory(soilMoistureValue) {
   }
 }
 
+export function getPlantCondition(temperatureC, humidityPct, soilMoisturePct) {
+  if (temperatureC == null || humidityPct == null || soilMoisturePct == null) {
+    return null
+  }
+
+  let score = 0
+
+  //temp scoring: optimal range 18-28°C
+  if (temperatureC >= 18 && temperatureC <= 28) {
+    score += 3
+  } else if (temperatureC >= 15 && temperatureC <= 35) {
+    score += 2
+  } else {
+    score += 1
+  }
+
+  //humidity scoring: optimal range 40-70%
+  if (humidityPct >= 40 && humidityPct <= 70) {
+    score += 3
+  } else if (humidityPct >= 30 && humidityPct <= 80) {
+    score += 2
+  } else {
+    score += 1
+  }
+
+  //soil moisture scoring based on dryness category
+  const soilDryness = getSoilDrynessCategory(soilMoisturePct)
+  if (soilDryness.category === 'Perfect') {
+    score += 3
+  } else if (soilDryness.category === 'Dry' || soilDryness.category === 'Too Wet') {
+    score += 2
+  } else if (soilDryness.category === 'Very Dry') {
+    score += 1
+  }
+
+  //determine condition based on total score (max 9)
+  if (score >= 8) {
+    return 'Perfect'
+  } else if (score >= 6) {
+    return 'Good'
+  } else if (score >= 4) {
+    return 'Poor'
+  } else {
+    return 'Bad'
+  }
+}
+
 export async function fetchLatestMeasurement() {
   const cfg = getSupabaseConfig()
   const supabase = getSupabaseClient()

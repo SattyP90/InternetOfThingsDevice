@@ -1,6 +1,6 @@
 import './style.css'
 import { isSupabaseConfigured } from './Data/config.js'
-import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory } from './Data/measurements.js'
+import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory, getPlantCondition } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringStatus } from './Data/watering.js'
 
@@ -22,6 +22,11 @@ app.innerHTML = `
     <section class="card advisory" aria-label="Watering recommendation">
       <h2 class="widget-title">Watering</h2>
       <div id="watering-status" class="advisory-status">—</div>
+    </section>
+
+    <section class="card advisory" aria-label="Plant conditions">
+      <h2 class="widget-title">Plant Condition</h2>
+      <div id="plant-condition" class="advisory-status">—</div>
     </section>
 
     <h2 class="section-title">Current measurements</h2>
@@ -64,6 +69,7 @@ const temperatureMetaEl = document.querySelector('#temperature-meta')
 const humidityMetaEl = document.querySelector('#humidity-meta')
 const soilMoistureMetaEl = document.querySelector('#soil-moisture-meta')
 const wateringStatusEl = document.querySelector('#watering-status')
+const plantConditionEl = document.querySelector('#plant-condition')
 
 let latestMeasurement = null
 let unsubscribe = null
@@ -89,6 +95,9 @@ function renderMeasurement(measurement) {
 
   const wateringStatus = getWateringStatus(soilDryness)
   wateringStatusEl.textContent = wateringStatus ?? '—'
+
+  const condition = getPlantCondition(temperatureC, humidityPct, soilMoisturePct)
+  plantConditionEl.textContent = condition ?? '—'
 }
 
 async function loadData() {
