@@ -64,7 +64,6 @@ const temperatureMetaEl = document.querySelector('#temperature-meta')
 const humidityMetaEl = document.querySelector('#humidity-meta')
 const soilMoistureMetaEl = document.querySelector('#soil-moisture-meta')
 const wateringStatusEl = document.querySelector('#watering-status')
-const wateringReasonEl = document.querySelector('#watering-reason')
 
 let latestMeasurement = null
 let unsubscribe = null
@@ -90,7 +89,6 @@ function renderMeasurement(measurement) {
 
   const watering = getWateringDecision({ soilMoisturePct, profile: getSelectedProfile() })
   wateringStatusEl.textContent = watering?.statusText ?? '—'
-  wateringReasonEl.textContent = watering?.reason ?? ''
 }
 
 async function loadData() {
@@ -99,14 +97,12 @@ async function loadData() {
     renderMeasurement(measurement)
   } catch (err) {
     wateringStatusEl.textContent = 'Error loading data'
-    wateringReasonEl.textContent = err?.message ? String(err.message) : 'Unknown error'
   }
 }
 
 async function start() {
   if (!isSupabaseConfigured()) {
     wateringStatusEl.textContent = 'Supabase not configured'
-    wateringReasonEl.textContent = 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in UI/.env.'
     return
   }
 
@@ -116,7 +112,6 @@ async function start() {
     },
     (error) => {
       wateringStatusEl.textContent = 'Error loading data'
-      wateringReasonEl.textContent = error?.message ? String(error.message) : 'Unknown error'
     }
   )
 }
