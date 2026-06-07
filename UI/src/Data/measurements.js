@@ -79,9 +79,9 @@ export function subscribeToMeasurementUpdates(onUpdate, onError) {
     }
   }
 
-  //start - check database every 30 seconds
+  //start check database every 30 seconds
   console.log('Starting to poll database every 30 seconds')
-  loadAndNotify() // Load initial data immediately
+  loadAndNotify() // load initial data immediately
   pollInterval = setInterval(loadAndNotify, 30000)
 
   //return unsubscribe function
