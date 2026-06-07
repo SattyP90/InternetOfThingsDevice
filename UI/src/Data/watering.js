@@ -30,3 +30,22 @@ export function getWateringDecision({ soilMoisturePct, profile }) {
     reason: `Soil moisture ${soilMoisturePct}% is at/above ${soilMoistureMin}%.`
   }
 }
+
+export function getWateringStatus(soilDrynessCategory) {
+  if (!soilDrynessCategory) {
+    return 'No data'
+  }
+
+  switch (soilDrynessCategory.category) {
+    case 'Very Dry':
+      return 'Water Needed'
+    case 'Dry':
+      return 'Should Water'
+    case 'Perfect':
+      return 'No watering needed'
+    case 'Too Wet':
+      return 'No watering needed'
+    default:
+      return 'No data'
+  }
+}

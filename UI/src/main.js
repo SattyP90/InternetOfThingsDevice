@@ -2,7 +2,7 @@ import './style.css'
 import { isSupabaseConfigured } from './Data/config.js'
 import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
-import { getWateringDecision } from './Data/watering.js'
+import { getWateringStatus } from './Data/watering.js'
 
 const app = document.querySelector('#app')
 
@@ -87,8 +87,8 @@ function renderMeasurement(measurement) {
   humidityMetaEl.textContent = `Last updated: ${timeText}`
   soilMoistureMetaEl.textContent = `Last updated: ${timeText}`
 
-  const watering = getWateringDecision({ soilMoisturePct, profile: getSelectedProfile() })
-  wateringStatusEl.textContent = watering?.statusText ?? '—'
+  const wateringStatus = getWateringStatus(soilDryness)
+  wateringStatusEl.textContent = wateringStatus ?? '—'
 }
 
 async function loadData() {
