@@ -3,7 +3,7 @@ import { isSupabaseConfigured } from './Data/config.js'
 import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory, getPlantCondition, getPlantCareAdvice, PLANTS, getTemperatureStatus, getHumidityStatus, getPlantSoilMoistureStatus } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringStatus } from './Data/watering.js'
-import { sendTelegramMessage } from './Data/telegram.js'
+import { sendTelegramMessage } from './notifications/telegram.js'
 
 const app = document.querySelector('#app')
 
