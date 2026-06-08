@@ -121,7 +121,7 @@ function renderMeasurement(measurement) {
   const adviceString = JSON.stringify(advice)
   
   if (plantType !== lastPlantType || adviceString !== lastAdvice) {
-    const message = `[${PLANTS[plantType].name} Care Guide]\n${advice.map(tip => `• ${tip}`).join('\n')}`
+    const message = `[${PLANTS[plantType].name} Care Guide]\n${advice.join('\n')}`
     
     console.log(`[${PLANTS[plantType].name} Care Guide]`)
     advice.forEach(tip => console.log(`• ${tip}`))
