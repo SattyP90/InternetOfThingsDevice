@@ -2,6 +2,73 @@ import { getSupabaseClient } from './supabaseClient.js'
 import { getSupabaseConfig } from './config.js'
 import { getWateringDecision } from './watering.js'
 
+export const PLANTS = {
+  cactus: {
+    name: 'Cactus',
+    moisture: {
+      veryDry: 3000,
+      dry: 2200,
+      perfect: 1200
+    },
+    temperature: {
+      min: 18,
+      max: 32
+    },
+    humidity: {
+      min: 20,
+      max: 50
+    }
+  },
+  spiderPlant: {
+    name: 'Spider Plant',
+    moisture: {
+      veryDry: 3000,
+      dry: 2000,
+      perfect: 1000
+    },
+    temperature: {
+      min: 18,
+      max: 27
+    },
+    humidity: {
+      min: 40,
+      max: 60
+    }
+  },
+  peaceLily: {
+    name: 'Peace Lily',
+    moisture: {
+      veryDry: 2800,
+      dry: 1800,
+      perfect: 800
+    },
+    temperature: {
+      min: 18,
+      max: 30
+    },
+    humidity: {
+      min: 50,
+      max: 80
+    }
+  },
+  venusFlytrap: {
+    name: 'Venus Flytrap',
+    moisture: {
+      veryDry: 2000,
+      dry: 1200,
+      perfect: 300
+    },
+    temperature: {
+      min: 20,
+      max: 35
+    },
+    humidity: {
+      min: 50,
+      max: 80
+    }
+  }
+}
+
 function toNumberOrNull(value) {
   if (value == null) return null
   const num = typeof value === 'number' ? value : Number(value)
@@ -28,50 +95,116 @@ export function getSoilDrynessCategory(soilMoistureValue) {
   }
 }
 
-export function getPlantCondition(temperatureC, humidityPct, soilMoisturePct) {
+export function getPlantCondition(temperatureC, humidityPct, soilMoisturePct, plantType = 'cactus') {
   if (temperatureC == null || humidityPct == null || soilMoisturePct == null) {
     return null
   }
 
-  let score = 0
+  const plant = PLANTS[plantType] || PLANTS.cactus
+  let goodFactors = 0
 
-  //temp scoring: optimal range 18-28°C
-  if (temperatureC >= 18 && temperatureC <= 28) {
-    score += 3
-  } else if (temperatureC >= 15 && temperatureC <= 35) {
-    score += 2
-  } else {
-    score += 1
+  //check temperature
+  if (temperatureC >= plant.temperature.min && temperatureC <= plant.temperature.max) {
+    goodFactors++
   }
 
-  //humidity scoring: optimal range 40-70%
-  if (humidityPct >= 40 && humidityPct <= 70) {
-    score += 3
-  } else if (humidityPct >= 30 && humidityPct <= 80) {
-    score += 2
-  } else {
-    score += 1
+  //check humidity
+  if (humidityPct >= plant.humidity.min && humidityPct <= plant.humidity.max) {
+    goodFactors++
   }
 
-  //soil moisture scoring based on dryness category
-  const soilDryness = getSoilDrynessCategory(soilMoisturePct)
-  if (soilDryness.category === 'Perfect') {
-    score += 3
-  } else if (soilDryness.category === 'Dry' || soilDryness.category === 'Too Wet') {
-    score += 2
-  } else if (soilDryness.category === 'Very Dry') {
-    score += 1
+  //check soil moisture - good range is between perfect and dry
+  if (soilMoisturePct >= plant.moisture.perfect && soilMoisturePct <= plant.moisture.dry) {
+    goodFactors++
   }
 
-  //determine condition based on total score (max 9)
-  if (score >= 8) {
+  //determine condition based on how many factors are good (out of 3)
+  if (goodFactors === 3) {
     return 'Perfect'
-  } else if (score >= 6) {
+  } else if (goodFactors === 2) {
     return 'Good'
-  } else if (score >= 4) {
+  } else if (goodFactors === 1) {
     return 'Poor'
   } else {
     return 'Bad'
+  }
+}
+
+export function getPlantCareAdvice(temperatureC, humidityPct, soilMoisturePct, plantType = 'cactus') {
+  if (temperatureC == null || humidityPct == null || soilMoisturePct == null) {
+    return []
+  }
+
+  const plant = PLANTS[plantType] || PLANTS.cactus
+  const advice = []
+
+  //temperature advice
+  if (temperatureC < plant.temperature.min) {
+    advice.push(`Temperature too low for ${plant.name} (${temperatureC}°C). Move to warmer location.`)
+  } else if (temperatureC > plant.temperature.max) {
+    advice.push(`Temperature too high for ${plant.name} (${temperatureC}°C). Move to cooler location.`)
+  }
+
+  //humidity advice
+  if (humidityPct < plant.humidity.min) {
+    advice.push(`Humidity too low for ${plant.name} (${humidityPct}%). Increase humidity by misting or moving to humid area.`)
+  } else if (humidityPct > plant.humidity.max) {
+    advice.push(`Humidity too high for ${plant.name} (${humidityPct}%). Improve air circulation.`)
+  }
+
+  //soil moisture advice
+  if (soilMoisturePct > plant.moisture.veryDry) {
+    advice.push(`Soil too dry for ${plant.name}. Water the plant immediately.`)
+  } else if (soilMoisturePct > plant.moisture.dry) {
+    advice.push(`Soil getting dry for ${plant.name}. Water soon.`)
+  } else if (soilMoisturePct < 500) {
+    advice.push(`Soil too wet for ${plant.name}. Reduce watering and improve drainage.`)
+  }
+
+  if (advice.length === 0) {
+    advice.push(`${plant.name} is in optimal conditions. Keep up the great care!`)
+  }
+
+  return advice
+}
+
+export function getTemperatureStatus(temperatureC, plantType = 'cactus') {
+  if (temperatureC == null) return 'neutral'
+  
+  const plant = PLANTS[plantType] || PLANTS.cactus
+  
+  if (temperatureC >= plant.temperature.min && temperatureC <= plant.temperature.max) {
+    return 'good'
+  } else {
+    return 'bad'
+  }
+}
+
+export function getHumidityStatus(humidityPct, plantType = 'cactus') {
+  if (humidityPct == null) return 'neutral'
+  
+  const plant = PLANTS[plantType] || PLANTS.cactus
+  
+  if (humidityPct >= plant.humidity.min && humidityPct <= plant.humidity.max) {
+    return 'good'
+  } else {
+    return 'bad'
+  }
+}
+
+export function getPlantSoilMoistureStatus(soilMoistureValue, plantType = 'cactus') {
+  if (soilMoistureValue == null) return null
+  
+  const plant = PLANTS[plantType] || PLANTS.cactus
+  
+  if (soilMoistureValue > plant.moisture.veryDry) {
+    return { category: 'Very Dry', value: soilMoistureValue, status: 'bad' }
+  } else if (soilMoistureValue > plant.moisture.dry) {
+    return { category: 'Dry', value: soilMoistureValue, status: 'bad' }
+  } else if (soilMoistureValue <= plant.moisture.perfect) {
+    return { category: 'Perfect', value: soilMoistureValue, status: 'good' }
+  } else {
+    return { category: 'Too Wet', value: soilMoistureValue, status: 'bad' }
   }
 }
 

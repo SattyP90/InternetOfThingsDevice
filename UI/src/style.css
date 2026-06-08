@@ -117,6 +117,18 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.widget-value .number.good {
+  color: #10b981;
+}
+
+.widget-value .number.bad {
+  color: #ef4444;
+}
+
+.widget-value .number.neutral {
+  color: #111827;
+}
+
 .widget-value .unit {
   font-size: 16px;
   font-weight: 700;

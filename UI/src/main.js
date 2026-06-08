@@ -1,6 +1,6 @@
 import './style.css'
 import { isSupabaseConfigured } from './Data/config.js'
-import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory, getPlantCondition } from './Data/measurements.js'
+import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory, getPlantCondition, getPlantCareAdvice, PLANTS, getTemperatureStatus, getHumidityStatus, getPlantSoilMoistureStatus } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringStatus } from './Data/watering.js'
 
@@ -9,12 +9,13 @@ const app = document.querySelector('#app')
 app.innerHTML = `
   <main class="container">
     <header class="header">
-      <h1>Plant Monitoring UI</h1>
+      <h1>Plant Monitor</h1>
       <h2>Select a plant profile</h2>
       <select id="plant-profile-select" aria-label="Select plant profile">
         <option value="cactus">Cactus</option>
-        <option value="fern">Fern</option>
-        <option value="succulent" selected>Succulent</option>
+        <option value="spiderPlant">Spider Plant</option>
+        <option value="peaceLily">Peace Lily</option>
+        <option value="venusFlytrap" selected>Venus Flytrap</option>
       </select>
 
     </header>
@@ -75,7 +76,7 @@ let latestMeasurement = null
 let unsubscribe = null
 
 function getSelectedProfile() {
-  return plantProfileSelect?.value || 'succulent'
+  return plantProfileSelect?.value || 'venusFlytrap'
 }
 
 function renderMeasurement(measurement) {
@@ -83,21 +84,39 @@ function renderMeasurement(measurement) {
 
   const { temperatureC, humidityPct, soilMoisturePct, timestamp } = measurement
   const timeText = formatTimestamp(timestamp)
-  const soilDryness = getSoilDrynessCategory(soilMoisturePct)
+  const plantType = getSelectedProfile()
+  
+  //get plant-specific statuses
+  const tempStatus = getTemperatureStatus(temperatureC, plantType)
+  const humidityStatus = getHumidityStatus(humidityPct, plantType)
+  const soilStatus = getPlantSoilMoistureStatus(soilMoisturePct, plantType)
 
+  //update temperature with status class
   temperatureValueEl.textContent = temperatureC ?? '—'
+  temperatureValueEl.className = `number ${tempStatus}`
+  
+  //update humidity with status class
   humidityValueEl.textContent = humidityPct ?? '—'
-  soilMoistureValueEl.textContent = soilDryness ? soilDryness.category : '—'
+  humidityValueEl.className = `number ${humidityStatus}`
+  
+  //update soil moisture with plant-specific status
+  soilMoistureValueEl.textContent = soilStatus ? soilStatus.category : '—'
+  soilMoistureValueEl.className = `number ${soilStatus?.status || 'neutral'}`
 
   temperatureMetaEl.textContent = `Last updated: ${timeText}`
   humidityMetaEl.textContent = `Last updated: ${timeText}`
   soilMoistureMetaEl.textContent = `Last updated: ${timeText}`
 
-  const wateringStatus = getWateringStatus(soilDryness)
+  const wateringStatus = getWateringStatus(soilStatus)
   wateringStatusEl.textContent = wateringStatus ?? '—'
 
-  const condition = getPlantCondition(temperatureC, humidityPct, soilMoisturePct)
+  const condition = getPlantCondition(temperatureC, humidityPct, soilMoisturePct, plantType)
   plantConditionEl.textContent = condition ?? '—'
+
+  //log care advice to console
+  const advice = getPlantCareAdvice(temperatureC, humidityPct, soilMoisturePct, plantType)
+  console.log(`[${PLANTS[plantType].name} Care Guide]`)
+  advice.forEach(tip => console.log(`• ${tip}`))
 }
 
 async function loadData() {
