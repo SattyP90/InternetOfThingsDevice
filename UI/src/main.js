@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from './Data/config.js'
 import { fetchLatestMeasurement, subscribeToMeasurementUpdates, getSoilDrynessCategory, getPlantCondition, getPlantCareAdvice, PLANTS, getTemperatureStatus, getHumidityStatus, getPlantSoilMoistureStatus } from './Data/measurements.js'
 import { formatTimestamp } from './Data/time.js'
 import { getWateringStatus } from './Data/watering.js'
+import { sendTelegramMessage } from './Data/telegram.js'
 
 const app = document.querySelector('#app')
 
@@ -74,6 +75,8 @@ const plantConditionEl = document.querySelector('#plant-condition')
 
 let latestMeasurement = null
 let unsubscribe = null
+let lastPlantType = null
+let lastAdvice = null
 
 function getSelectedProfile() {
   return plantProfileSelect?.value || 'venusFlytrap'
@@ -113,10 +116,21 @@ function renderMeasurement(measurement) {
   const condition = getPlantCondition(temperatureC, humidityPct, soilMoisturePct, plantType)
   plantConditionEl.textContent = condition ?? '—'
 
-  //log care advice to console
+  //log care advice to console and send to telegram only when plant changes or advice changes
   const advice = getPlantCareAdvice(temperatureC, humidityPct, soilMoisturePct, plantType)
-  console.log(`[${PLANTS[plantType].name} Care Guide]`)
-  advice.forEach(tip => console.log(`• ${tip}`))
+  const adviceString = JSON.stringify(advice)
+  
+  if (plantType !== lastPlantType || adviceString !== lastAdvice) {
+    const message = `[${PLANTS[plantType].name} Care Guide]\n${advice.map(tip => `• ${tip}`).join('\n')}`
+    
+    console.log(`[${PLANTS[plantType].name} Care Guide]`)
+    advice.forEach(tip => console.log(`• ${tip}`))
+    
+    sendTelegramMessage(message)
+    
+    lastPlantType = plantType
+    lastAdvice = adviceString
+  }
 }
 
 async function loadData() {
