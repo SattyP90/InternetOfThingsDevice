@@ -81,6 +81,15 @@ function toIsoStringOrNull(value) {
   return Number.isFinite(date.getTime()) ? date.toISOString() : null
 }
 
+function toMeasurementRecord(row, cfg) {
+  return {
+    temperatureC: row ? toNumberOrNull(row[cfg.columns.temperature]) : null,
+    humidityPct: row ? toNumberOrNull(row[cfg.columns.humidity]) : null,
+    soilMoisturePct: row ? toNumberOrNull(row[cfg.columns.soilMoisture]) : null,
+    timestamp: row ? toIsoStringOrNull(row[cfg.timestampColumn]) : null
+  }
+}
+
 export function getSoilDrynessCategory(soilMoistureValue) {
   if (soilMoistureValue == null) return null
   
@@ -230,18 +239,34 @@ export async function fetchLatestMeasurement() {
 
   if (error) throw error
 
-  const row = data || null
-  const temperatureC = row ? toNumberOrNull(row[cfg.columns.temperature]) : null
-  const humidityPct = row ? toNumberOrNull(row[cfg.columns.humidity]) : null
-  const soilMoisturePct = row ? toNumberOrNull(row[cfg.columns.soilMoisture]) : null
-  const timestamp = row ? toIsoStringOrNull(row[cfg.timestampColumn]) : null
+  return toMeasurementRecord(data || null, cfg)
+}
 
-  return {
-    temperatureC,
-    humidityPct,
-    soilMoisturePct,
-    timestamp
-  }
+export async function fetchMeasurementHistory(limit = 24) {
+  const cfg = getSupabaseConfig()
+  const supabase = getSupabaseClient()
+  const historyLimit = Number.isFinite(Number(limit)) ? Math.max(1, Math.trunc(Number(limit))) : 24
+
+  const selectCols = [
+    cfg.timestampColumn,
+    cfg.columns.temperature,
+    cfg.columns.humidity,
+    cfg.columns.soilMoisture
+  ]
+    .filter(Boolean)
+    .join(',')
+
+  const { data, error } = await supabase
+    .from(cfg.table)
+    .select(selectCols)
+    .order(cfg.timestampColumn, { ascending: false })
+    .limit(historyLimit)
+
+  if (error) throw error
+
+  return (data || [])
+    .map((row) => toMeasurementRecord(row, cfg))
+    .filter((record) => record.timestamp)
 }
 
 export function subscribeToMeasurementUpdates(onUpdate, onError) {
